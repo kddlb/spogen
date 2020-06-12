@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -12,13 +11,11 @@ func TokenRefresher() func(context *gin.Context) {
 	return func(context *gin.Context) {
 		reToken, err := context.Cookie("refreshToken")
 		if err != nil {
-			log.Println("No token in cookies")
 			context.Next()
 		} else {
 			dateExpireT, _ := context.Cookie("dateTokenExpires")
 			dateExpire, _ := time.Parse(time.RFC3339, dateExpireT)
 			if time.Now().After(dateExpire) {
-				log.Println("Token expired")
 				type OAuthRefreshToken struct {
 					AccessToken string `json:"access_token"`
 					TokenType   string `json:"token_type"`
@@ -44,7 +41,6 @@ func TokenRefresher() func(context *gin.Context) {
 				context.Redirect(http.StatusFound, context.Request.URL.String())
 
 			} else {
-				log.Println("Token hasn't expired")
 				context.Next()
 			}
 		}
