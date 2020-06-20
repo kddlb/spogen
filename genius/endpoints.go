@@ -60,9 +60,16 @@ func Get(ctx *gin.Context) {
 
 	html, _ := doc.Find("div.lyrics").Html()
 
+	sx := strings.Split(html2text.HTML2Text(html), "\r\n")
+	sx2 := make([]string, len(sx))
+
+	for i, v := range sx {
+		sx2[i] = strings.TrimSpace(v)
+	}
+
 	ctx.JSON(200, GetResult{
 		HTML: strings.TrimSpace(html),
-		Text: html2text.HTML2Text(html),
+		Text: strings.Join(sx2, "\r\n"),
 	})
 
 }
