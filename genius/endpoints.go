@@ -40,6 +40,10 @@ func Search(ctx *gin.Context) {
 		return searchMap[i].SpogenDistance < searchMap[j].SpogenDistance
 	})
 
+	if searchMap == nil {
+		searchMap = []Result{}
+	}
+
 	ctx.JSON(http.StatusOK, searchMap)
 
 }
