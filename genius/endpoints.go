@@ -2,16 +2,17 @@ package genius
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
-	"github.com/k3a/html2text"
-	"github.com/masatana/go-textdistance"
 	"net/http"
 	"os"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
+	"github.com/k3a/html2text"
+	"github.com/masatana/go-textdistance"
 )
 
 var Resty *resty.Client
@@ -32,7 +33,7 @@ func Search(ctx *gin.Context) {
 
 	for _, s := range searchHits {
 		s.Result.SpogenDistance = textdistance.DamerauLevenshteinDistance(strings.ToLower(queryDistance),
-			strings.ToLower(s.Result.FullTitle))
+			strings.ToLower(re.ReplaceAllString(s.Result.FullTitle, "")))
 		searchMap = append(searchMap, s.Result)
 	}
 
@@ -43,6 +44,9 @@ func Search(ctx *gin.Context) {
 	if searchMap == nil {
 		searchMap = []Result{}
 	}
+
+	ctx.Header("X-SpoGen-Search", query)
+	ctx.Header("X-SpoGen-Compare-To", queryDistance)
 
 	ctx.JSON(http.StatusOK, searchMap)
 
