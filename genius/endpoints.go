@@ -81,3 +81,60 @@ func Get(ctx *gin.Context) {
 	})
 
 }
+
+type ParseReq struct {
+	Text string `form:"text" json:"text" xml:"text" binding:"required"`
+}
+
+func Parse(ctx *gin.Context) {
+
+	var data ParseReq
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(data.Text))
+	doc.Find("div.lyrics").Find("a").Each(func(i int, selection *goquery.Selection) {
+		h, _ := selection.Html()
+		selection.ReplaceWithHtml(h)
+	})
+
+	type GetResult struct {
+		HTML string `json:"html"`
+		Text string `json:"text"`
+	}
+
+	lyrics := doc.Find("div.lyrics")
+
+	if lyrics.Nodes == nil {
+		doc.Find(".jgQsqn").Find("a").Each(func(i int, selection *goquery.Selection) {
+			h, _ := selection.Html()
+			selection.ReplaceWithHtml(h)
+		})
+		lyrics = doc.Find(".jgQsqn")
+	}
+
+	var lxx []string
+
+	for _, vx := range lyrics.Nodes {
+		htmlx, _ := doc.FindNodes(vx).Html()
+		lxx = append(lxx, htmlx)
+	}
+
+	html := strings.Join(lxx, "<br/><br/>")
+
+	sx := strings.Split(html2text.HTML2Text(html), "\r\n")
+	sx2 := make([]string, len(sx))
+
+	for i, v := range sx {
+		sx2[i] = strings.TrimSpace(v)
+	}
+
+	ctx.JSON(200, GetResult{
+		HTML: strings.TrimSpace(html),
+		Text: strings.Join(sx2, "\r\n"),
+	})
+
+}

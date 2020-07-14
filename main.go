@@ -1,13 +1,15 @@
 package main
 
 import (
+	"log"
+
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"github.com/joho/godotenv"
 	"github.com/kddlb/spogen/genius"
 	"github.com/kddlb/spogen/session"
 	"github.com/kddlb/spogen/spotify"
-	"log"
 )
 
 var Resty *resty.Client = resty.New()
@@ -27,6 +29,8 @@ func main() {
 
 	r.Use(TokenRefresher())
 
+	r.Use(static.Serve("/", static.LocalFile("www", false)))
+
 	sessionEp := r.Group("/api/session")
 	{
 		sessionEp.GET("/new", session.New)
@@ -45,6 +49,7 @@ func main() {
 	{
 		geniusEp.GET("/search", genius.Search)
 		geniusEp.GET("/get/*path", genius.Get)
+		geniusEp.POST("/parse", genius.Parse)
 	}
 
 	r.Run()
