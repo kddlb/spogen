@@ -49,6 +49,7 @@ func main() {
 	{
 		geniusEp.GET("/search", genius.Search)
 		geniusEp.GET("/get/*path", genius.Get)
+		geniusEp.GET("/gl/:id", genius.GetId)
 		geniusEp.POST("/parse", genius.Parse)
 	}
 

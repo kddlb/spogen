@@ -52,6 +52,15 @@ func Search(ctx *gin.Context) {
 
 }
 
+func GetId(ctx *gin.Context) {
+	sResp, _ := Resty.R().
+		SetAuthToken(os.Getenv("GENIUS_ACCESS_TOKEN")).
+		SetResult(&Song{}).
+		Get("https://api.genius.com/songs/" + ctx.Param("id"))
+	ctx.JSON(http.StatusOK, sResp.Result().(*Song).Response.Song)
+
+}
+
 func Get(ctx *gin.Context) {
 	url := "https://genius.com" + ctx.Param("path")
 	gRes, _ := Resty.R().Get(url)
