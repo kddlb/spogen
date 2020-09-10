@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
@@ -10,15 +8,35 @@ import (
 	"github.com/kddlb/spogen/genius"
 	"github.com/kddlb/spogen/session"
 	"github.com/kddlb/spogen/spotify"
+	"log"
+	"math/rand"
+	"net"
+	"net/http"
+	"os"
+	"time"
 )
 
-var Resty *resty.Client = resty.New()
+var (
+	Resty              *resty.Client = resty.New()
+	availableAddresses               = [4]*net.TCPAddr{}
+)
 
 func main() {
+
+	availableIPs := [4]string{"173.234.25.154:", "173.234.25.156:", "173.234.25.157:", "173.234.25.158:"}
+
+	for ix, ip := range availableIPs {
+		var err error
+		availableAddresses[ix], err = net.ResolveTCPAddr("tcp4", ip)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	session.Resty = Resty
 	spotify.Resty = Resty
 	genius.Resty = Resty
+	genius.GenerateTransportFromRandomIPAddress = generateTransportFromRandomIPAddress
 
 	err := godotenv.Load()
 	if err != nil {
@@ -54,4 +72,23 @@ func main() {
 	}
 
 	r.Run()
+}
+
+func generateTransportFromRandomIPAddress() *http.Transport {
+	var pick *net.TCPAddr
+	if os.Getenv("IS_DEV") == "yes" {
+		pick, _ = net.ResolveTCPAddr("tcp4", "192.168.1.85:")
+	} else {
+		randomIndex := rand.Intn(len(availableAddresses))
+		pick = availableAddresses[randomIndex]
+	}
+
+	log.Printf("IP picked: %s", pick)
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			LocalAddr: pick}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second}
 }

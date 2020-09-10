@@ -13,11 +13,16 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/k3a/html2text"
 	"github.com/masatana/go-textdistance"
+	"golang.org/x/net/html"
 )
 
-var Resty *resty.Client
+var (
+	Resty                                *resty.Client
+	GenerateTransportFromRandomIPAddress func() *http.Transport
+)
 
 func Search(ctx *gin.Context) {
+	Resty.SetTransport(GenerateTransportFromRandomIPAddress())
 	re := regexp.MustCompile("\\s*(\\(.*\\))")
 	simplifiedName := re.ReplaceAllString(strings.Split(ctx.Query("track"), " - ")[0], "")
 	query := fmt.Sprintf("%s %s", ctx.Query("artist"), simplifiedName)
@@ -53,6 +58,7 @@ func Search(ctx *gin.Context) {
 }
 
 func GetId(ctx *gin.Context) {
+	Resty.SetTransport(GenerateTransportFromRandomIPAddress())
 	sResp, _ := Resty.R().
 		SetAuthToken(os.Getenv("GENIUS_ACCESS_TOKEN")).
 		SetResult(&Song{}).
@@ -62,6 +68,7 @@ func GetId(ctx *gin.Context) {
 }
 
 func Get(ctx *gin.Context) {
+	Resty.SetTransport(GenerateTransportFromRandomIPAddress())
 	url := "https://genius.com" + ctx.Param("path")
 	gRes, _ := Resty.R().Get(url)
 	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(gRes.String()))
@@ -117,6 +124,10 @@ func Parse(ctx *gin.Context) {
 
 	lyrics := doc.Find("div.lyrics")
 
+	lyrics.Find(`hFVRqM`).Each(func(i int, s *goquery.Selection) {
+		RemoveNode(lyrics.Get(0), s.Get(0))
+	})
+
 	if lyrics.Nodes == nil {
 		doc.Find(".jgQsqn").Find("a").Each(func(i int, selection *goquery.Selection) {
 			h, _ := selection.Html()
@@ -146,4 +157,30 @@ func Parse(ctx *gin.Context) {
 		Text: strings.Join(sx2, "\r\n"),
 	})
 
+}
+
+func RemoveNode(root_node *html.Node, remove_me *html.Node) {
+	found_node := false
+	check_nodes := make(map[int]*html.Node)
+	i := 0
+
+	// loop through siblings
+	for n := root_node.FirstChild; n != nil; n = n.NextSibling {
+		if n == remove_me {
+			found_node = true
+			n.Parent.RemoveChild(n)
+		}
+
+		check_nodes[i] = n
+		i++
+	}
+
+	// check if removing node is found
+	// if yes no need to check childs returning
+	// if no continue loop through childs and so on
+	if found_node == false {
+		for _, item := range check_nodes {
+			RemoveNode(item, remove_me)
+		}
+	}
 }

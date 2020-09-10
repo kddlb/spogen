@@ -13,4 +13,5 @@ require (
 	github.com/k3a/html2text v0.0.0-20191003111652-62431c4a3ba5
 	github.com/masatana/go-textdistance v0.0.0-20191005053614-738b0edac985
 	github.com/smartystreets/goconvey v1.6.4 // indirect
+	golang.org/x/net v0.0.0-20200513185701-a91f0712d120
 )
